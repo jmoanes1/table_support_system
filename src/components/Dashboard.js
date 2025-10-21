@@ -10,6 +10,8 @@ import BeerMenu from './BeerMenu';
 import BackupRestore from './BackupRestore';
 import OrderHistory from './OrderHistory';
 import OrderHistoryPage from './OrderHistoryPage';
+import NotificationBadge from './NotificationBadge';
+import PoolTableTracker from './PoolTableTracker';
 import { calculateAnalytics } from '../utils/analytics';
 import { logActivity, ACTIVITY_TYPES } from '../utils/activityLogger';
 import { sessionManager } from '../utils/sessionManager';
@@ -29,7 +31,9 @@ const Dashboard = ({ currentUser, onLogout }) => {
   const [showBackup, setShowBackup] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showHistoryPage, setShowHistoryPage] = useState(false);
+  const [showPoolTracker, setShowPoolTracker] = useState(false);
   const [sessionWarning, setSessionWarning] = useState(false);
+  const [poolUnpaidCustomers, setPoolUnpaidCustomers] = useState([]);
 
   // Initialize tables on component mount
   useEffect(() => {
@@ -303,6 +307,30 @@ const Dashboard = ({ currentUser, onLogout }) => {
     totalOrdersToday: tables.filter(table => table.isOccupied).length
   };
 
+  // Get unpaid customers data for notification badge (combine table and pool customers)
+  const tableUnpaidCustomers = tables
+    .filter(table => table.isOccupied && table.paymentStatus === 'unpaid')
+    .map(table => ({
+      name: table.customerName,
+      table: `Table ${table.tableNumber}`,
+      totalOwed: table.totalCost || 0
+    }));
+
+  const allUnpaidCustomers = [...tableUnpaidCustomers, ...poolUnpaidCustomers];
+  
+  // Debug logging
+  console.log('Dashboard - Table unpaid customers:', tableUnpaidCustomers);
+  console.log('Dashboard - Pool unpaid customers:', poolUnpaidCustomers);
+  console.log('Dashboard - All unpaid customers:', allUnpaidCustomers);
+
+  // Test data for demonstration (uncomment to test notification badge)
+  // const testUnpaidCustomers = [
+  //   { name: "John", table: 7 },
+  //   { name: "Anna", table: 3 },
+  //   { name: "Jake", table: 1 },
+  // ];
+  // Replace unpaidCustomers with testUnpaidCustomers to test the notification badge
+
   if (isLoading) {
     return (
       <div className="container">
@@ -318,20 +346,70 @@ const Dashboard = ({ currentUser, onLogout }) => {
       {/* Header */}
       <div className="header">
         <div>
-          <h1>Table Support</h1>
+          <h1>Shooter Bar System</h1>
           <p style={{ color: '#7f8c8d', margin: '5px 0 0 0' }}>
             Management System
           </p>
         </div>
-        <div className="admin-info">
-          <span className="staff-info">
-            {currentUser.avatar} {currentUser.name} — {currentUser.role.toUpperCase()}
+        <div className="admin-info" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '15px',
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end'
+        }}>
+          {/* Notification Badge */}
+          <NotificationBadge unpaidCustomers={allUnpaidCustomers} />
+          
+          <span className="staff-info" style={{ 
+            display: 'flex', 
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              {currentUser.avatar} {currentUser.name}
+            </span>
+            <span style={{ color: '#7f8c8d', fontSize: '12px' }}>
+              — {currentUser.role.toUpperCase()}
+            </span>
           </span>
           <button onClick={onLogout} className="btn btn-secondary">
             🚪 Logout
           </button>
         </div>
       </div>
+
+      {/* Responsive CSS for mobile */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 15px !important;
+          }
+          
+          .admin-info {
+            width: 100% !important;
+            justify-content: space-between !important;
+            flex-wrap: nowrap !important;
+          }
+          
+          .staff-info {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 5px !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .admin-info {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+        }
+      `}</style>
 
       {/* Statistics Cards */}
       <StatsCards stats={stats} />
@@ -374,6 +452,9 @@ const Dashboard = ({ currentUser, onLogout }) => {
           </button>
           <button onClick={() => setShowBackup(true)} className="btn btn-secondary">
             💾 Backup & Restore
+          </button>
+          <button onClick={() => setShowPoolTracker(true)} className="btn btn-primary">
+            🎱 Pool Table Tracker
           </button>
         </div>
       </div>
@@ -440,6 +521,24 @@ const Dashboard = ({ currentUser, onLogout }) => {
         <BackupRestore
           onClose={() => setShowBackup(false)}
         />
+      )}
+
+      {showPoolTracker && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '1200px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h2>🎱 Pool Table Game & Rent Tracker</h2>
+              <button 
+                onClick={() => setShowPoolTracker(false)} 
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '8px 12px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <PoolTableTracker onUnpaidCustomersUpdate={setPoolUnpaidCustomers} />
+          </div>
+        </div>
       )}
 
       {/* Session Warning Modal */}
