@@ -76,6 +76,9 @@ const TableModal = ({ table, onSave, onClose }) => {
       if (!formData.beerOrdered.trim()) {
         newErrors.beerOrdered = 'Beer order is required';
       }
+      if (formData.quantity < 1 || formData.quantity > 20) {
+        newErrors.quantity = 'Quantity must be between 1 and 20';
+      }
     }
 
     setErrors(newErrors);
@@ -120,13 +123,12 @@ const TableModal = ({ table, onSave, onClose }) => {
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>
+            <label className="checkbox-container">
               <input
                 type="checkbox"
                 name="isOccupied"
                 checked={formData.isOccupied}
                 onChange={handleChange}
-                style={{ marginRight: '10px' }}
               />
               Table is occupied
             </label>
@@ -134,7 +136,7 @@ const TableModal = ({ table, onSave, onClose }) => {
 
           {formData.isOccupied && (
             <>
-              <div className="form-group">
+              <div className={`form-group ${errors.customerName ? 'has-error' : ''}`}>
                 <label htmlFor="customerName">Customer Name *</label>
                 <input
                   type="text"
@@ -146,13 +148,14 @@ const TableModal = ({ table, onSave, onClose }) => {
                   required
                 />
                 {errors.customerName && (
-                  <span style={{ color: '#e74c3c', fontSize: '14px' }}>
-                    {errors.customerName}
-                  </span>
+                  <>
+                    <span className="error">{errors.customerName}</span>
+                    <span className="error-icon">⚠️</span>
+                  </>
                 )}
               </div>
 
-              <div className="form-group">
+              <div className={`form-group ${errors.beerOrdered ? 'has-error' : ''}`}>
                 <label htmlFor="beerOrdered">Beer Ordered *</label>
                 <select
                   id="beerOrdered"
@@ -169,13 +172,14 @@ const TableModal = ({ table, onSave, onClose }) => {
                   ))}
                 </select>
                 {errors.beerOrdered && (
-                  <span style={{ color: '#e74c3c', fontSize: '14px' }}>
-                    {errors.beerOrdered}
-                  </span>
+                  <>
+                    <span className="error">{errors.beerOrdered}</span>
+                    <span className="error-icon">⚠️</span>
+                  </>
                 )}
               </div>
 
-              <div className="form-group">
+              <div className={`form-group ${errors.quantity ? 'has-error' : ''}`}>
                 <label htmlFor="quantity">Quantity</label>
                 <input
                   type="number"
@@ -186,6 +190,12 @@ const TableModal = ({ table, onSave, onClose }) => {
                   min="1"
                   max="20"
                 />
+                {errors.quantity && (
+                  <>
+                    <span className="error">{errors.quantity}</span>
+                    <span className="error-icon">⚠️</span>
+                  </>
+                )}
               </div>
 
               <div className="form-group">
@@ -201,31 +211,50 @@ const TableModal = ({ table, onSave, onClose }) => {
               </div>
 
               {formData.beerOrdered && (
-                <div style={{ 
-                  background: '#f8f9fa', 
-                  padding: '15px', 
-                  borderRadius: '8px', 
-                  marginBottom: '20px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <h4 style={{ margin: '0 0 10px 0', color: '#2c3e50' }}>Order Summary</h4>
-                  <p style={{ margin: '5px 0', color: '#555' }}>
-                    <strong>Item:</strong> {formData.beerOrdered}
-                  </p>
-                  <p style={{ margin: '5px 0', color: '#555' }}>
-                    <strong>Quantity:</strong> {formData.quantity}
-                  </p>
-                  <p style={{ margin: '5px 0', color: '#555' }}>
-                    <strong>Price per item:</strong> ₱{formData.price}
-                  </p>
-                  <p style={{ margin: '5px 0', color: '#2c3e50', fontSize: '16px', fontWeight: 'bold' }}>
-                    <strong>Total Cost:</strong> ₱{formData.totalCost}
-                  </p>
-                  {formData.customOrder && (
-                    <p style={{ margin: '5px 0', color: '#555' }}>
-                      <strong>Special Request:</strong> {formData.customOrder}
-                    </p>
-                  )}
+                <div className="order-summary">
+                  <h4>
+                    <span className="summary-icon">📋</span>
+                    Order Summary
+                  </h4>
+                  <div className="order-summary-content">
+                    <div className="order-summary-item">
+                      <div className="order-summary-item-header">
+                        <span className="order-summary-icon">🍺</span>
+                        <span className="order-summary-label">Beer Item</span>
+                      </div>
+                      <span className="order-summary-value">{formData.beerOrdered}</span>
+                    </div>
+                    <div className="order-summary-item">
+                      <div className="order-summary-item-header">
+                        <span className="order-summary-icon">🔢</span>
+                        <span className="order-summary-label">Quantity</span>
+                      </div>
+                      <span className="order-summary-value">{formData.quantity} {formData.quantity === 1 ? 'piece' : 'pieces'}</span>
+                    </div>
+                    <div className="order-summary-item">
+                      <div className="order-summary-item-header">
+                        <span className="order-summary-icon">💵</span>
+                        <span className="order-summary-label">Price per Item</span>
+                      </div>
+                      <span className="order-summary-value">₱{formData.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                    {formData.customOrder && (
+                      <div className="order-summary-item order-summary-item-special">
+                        <div className="order-summary-item-header">
+                          <span className="order-summary-icon">📝</span>
+                          <span className="order-summary-label">Special Request</span>
+                        </div>
+                        <span className="order-summary-value order-summary-special">{formData.customOrder}</span>
+                      </div>
+                    )}
+                    <div className="order-summary-item order-summary-item-total">
+                      <div className="order-summary-item-header">
+                        <span className="order-summary-icon">💰</span>
+                        <span className="order-summary-label">Total Cost</span>
+                      </div>
+                      <span className="order-summary-total">₱{formData.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
                 </div>
               )}
 

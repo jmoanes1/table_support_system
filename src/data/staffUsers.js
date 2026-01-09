@@ -4,7 +4,8 @@ export const USER_ROLES = {
   STAFF: 'staff'
 };
 
-export const STAFF_USERS = [
+// Default staff users (can be overridden by localStorage)
+const DEFAULT_STAFF_USERS = [
   {
     id: 1,
     username: 'anna',
@@ -43,6 +44,85 @@ export const STAFF_USERS = [
   }
 ];
 
+// Get staff users from localStorage or use default
+export const getStaffUsers = () => {
+  const storedUsers = localStorage.getItem('staffUsers');
+  if (storedUsers) {
+    try {
+      return JSON.parse(storedUsers);
+    } catch (e) {
+      console.error('Error parsing staff users:', e);
+      return DEFAULT_STAFF_USERS;
+    }
+  }
+  // Initialize with default users
+  saveStaffUsers(DEFAULT_STAFF_USERS);
+  return DEFAULT_STAFF_USERS;
+};
+
+// Save staff users to localStorage
+export const saveStaffUsers = (users) => {
+  localStorage.setItem('staffUsers', JSON.stringify(users));
+};
+
+// Get current STAFF_USERS (for backward compatibility)
+export const STAFF_USERS = getStaffUsers();
+
+// Register a new staff member
+export const registerStaff = (staffData) => {
+  const users = getStaffUsers();
+  
+  // Check if username already exists
+  if (users.some(u => u.username === staffData.username)) {
+    return { success: false, error: 'Username already exists' };
+  }
+  
+  // Generate new ID
+  const maxId = users.length > 0 ? Math.max(...users.map(u => u.id)) : 0;
+  const newStaff = {
+    id: maxId + 1,
+    username: staffData.username,
+    password: staffData.password,
+    name: staffData.name,
+    role: staffData.role || USER_ROLES.STAFF,
+    isActive: true,
+    avatar: staffData.avatar || '👤'
+  };
+  
+  users.push(newStaff);
+  saveStaffUsers(users);
+  
+  return { success: true, staff: newStaff };
+};
+
+// Update staff member
+export const updateStaff = (staffId, updates) => {
+  const users = getStaffUsers();
+  const index = users.findIndex(u => u.id === staffId);
+  
+  if (index === -1) {
+    return { success: false, error: 'Staff member not found' };
+  }
+  
+  users[index] = { ...users[index], ...updates };
+  saveStaffUsers(users);
+  
+  return { success: true, staff: users[index] };
+};
+
+// Delete staff member
+export const deleteStaff = (staffId) => {
+  const users = getStaffUsers();
+  const filteredUsers = users.filter(u => u.id !== staffId);
+  
+  if (filteredUsers.length === users.length) {
+    return { success: false, error: 'Staff member not found' };
+  }
+  
+  saveStaffUsers(filteredUsers);
+  return { success: true };
+};
+
 // Staff permissions
 export const STAFF_PERMISSIONS = {
   [USER_ROLES.ADMIN]: [
@@ -75,7 +155,8 @@ export const hasStaffPermission = (userRole, permission) => {
 
 // Authentication functions
 export const authenticateStaff = (username, password) => {
-  const user = STAFF_USERS.find(
+  const users = getStaffUsers();
+  const user = users.find(
     u => u.username === username && u.password === password && u.isActive
   );
   
@@ -89,7 +170,8 @@ export const authenticateStaff = (username, password) => {
 };
 
 export const getStaffById = (id) => {
-  const user = STAFF_USERS.find(u => u.id === id);
+  const users = getStaffUsers();
+  const user = users.find(u => u.id === id);
   if (user) {
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
@@ -98,7 +180,8 @@ export const getStaffById = (id) => {
 };
 
 export const getStaffByName = (name) => {
-  const user = STAFF_USERS.find(u => u.name === name);
+  const users = getStaffUsers();
+  const user = users.find(u => u.name === name);
   if (user) {
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;

@@ -19,6 +19,7 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     setIsLoading(true);
 
     // Simulate API call delay
@@ -98,32 +99,6 @@ const Login = ({ onLogin }) => {
             )}
           </button>
         </form>
-        
-        <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '8px' }}>
-          <h4 style={{ color: '#00d4ff', marginBottom: '15px' }}>👥 Staff Credentials:</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
-            <div style={{ color: '#e0e0e0' }}>
-              <strong>👩‍💼 Anna:</strong><br />
-              Username: anna<br />
-              Password: staff123
-            </div>
-            <div style={{ color: '#e0e0e0' }}>
-              <strong>👨‍💼 Jake:</strong><br />
-              Username: jake<br />
-              Password: staff123
-            </div>
-            <div style={{ color: '#e0e0e0' }}>
-              <strong>👩‍💼 Kim:</strong><br />
-              Username: kim<br />
-              Password: staff123
-            </div>
-            <div style={{ color: '#e0e0e0' }}>
-              <strong>👨‍💻 Manager:</strong><br />
-              Username: admin<br />
-              Password: admin123
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

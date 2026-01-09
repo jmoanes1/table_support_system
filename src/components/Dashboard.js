@@ -12,6 +12,8 @@ import OrderHistory from './OrderHistory';
 import OrderHistoryPage from './OrderHistoryPage';
 import NotificationBadge from './NotificationBadge';
 import PoolTableTracker from './PoolTableTracker';
+import OrderStatusSystem from './OrderStatusSystem';
+import CustomerQRGenerator from './CustomerQRGenerator';
 import { calculateAnalytics } from '../utils/analytics';
 import { logActivity, ACTIVITY_TYPES } from '../utils/activityLogger';
 import { sessionManager } from '../utils/sessionManager';
@@ -29,9 +31,12 @@ const Dashboard = ({ currentUser, onLogout }) => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showBeerMenu, setShowBeerMenu] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
   const [showHistoryPage, setShowHistoryPage] = useState(false);
   const [showPoolTracker, setShowPoolTracker] = useState(false);
+  const [showTableReservation, setShowTableReservation] = useState(false);
+  const [showOrderStatus, setShowOrderStatus] = useState(false);
+  const [showCustomerQR, setShowCustomerQR] = useState(false);
   const [sessionWarning, setSessionWarning] = useState(false);
   const [poolUnpaidCustomers, setPoolUnpaidCustomers] = useState([]);
 
@@ -292,6 +297,7 @@ const Dashboard = ({ currentUser, onLogout }) => {
     setFilterStatus(status);
   };
 
+
   const handleClearFilters = () => {
     setSearchTerm('');
     setFilterStatus('all');
@@ -414,30 +420,51 @@ const Dashboard = ({ currentUser, onLogout }) => {
       {/* Statistics Cards */}
       <StatsCards stats={stats} />
 
-      {/* Search and Filters */}
-      <SearchFilters
-        onSearch={handleSearch}
-        onFilterChange={handleFilterChange}
-        onClearFilters={handleClearFilters}
-        searchTerm={searchTerm}
-        filterStatus={filterStatus}
-      />
+      {/* Search and Filters - Only show when table reservation is visible */}
+      {showTableReservation && (
+        <>
+          <SearchFilters
+            onSearch={handleSearch}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            searchTerm={searchTerm}
+            filterStatus={filterStatus}
+          />
 
-      {/* Export Buttons */}
-      <ExportButtons tables={tables} />
+          {/* Export Buttons */}
+          <ExportButtons tables={tables} />
+        </>
+      )}
 
       {/* New Dashboard Buttons */}
       <div style={{ 
-        background: 'rgba(255, 255, 255, 0.05)', 
-        backdropFilter: 'blur(10px)', 
-        borderRadius: '15px', 
-        padding: '20px', 
-        marginBottom: '30px', 
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        textAlign: 'center'
+        background: 'var(--card-bg)', 
+        backdropFilter: 'blur(20px)', 
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: 'var(--radius-lg)', 
+        padding: 'var(--spacing-xl)', 
+        marginBottom: 'var(--spacing-xl)', 
+        boxShadow: 'var(--card-shadow)',
+        border: '1px solid var(--card-border)',
+        textAlign: 'center',
+        transition: 'all var(--transition-base)'
       }}>
-        <h3 style={{ color: '#00d4ff', marginBottom: '15px' }}>🎯 Advanced Features</h3>
-        <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <h3 style={{ 
+          background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          marginBottom: 'var(--spacing-lg)', 
+          fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
+          fontWeight: '800',
+          letterSpacing: '-0.5px'
+        }}>🎯 Advanced Features</h3>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: 'var(--spacing-sm)', 
+          justifyContent: 'center'
+        }}>
           <button onClick={() => setShowAnalytics(true)} className="btn btn-primary">
             📊 Analytics Dashboard
           </button>
@@ -456,26 +483,141 @@ const Dashboard = ({ currentUser, onLogout }) => {
           <button onClick={() => setShowPoolTracker(true)} className="btn btn-primary">
             🎱 Pool Table Tracker
           </button>
+          <button onClick={() => setShowOrderStatus(true)} className="btn btn-warning">
+            📋 Order Status
+          </button>
+          <button onClick={() => setShowCustomerQR(true)} className="btn btn-info">
+            📱 Customer QR
+          </button>
         </div>
       </div>
 
-      {/* Tables Grid */}
-      <div className="tables-grid">
-        {filteredTables.map(table => (
-          <TableCard
-            key={table.id}
-            table={table}
-            onEdit={handleEditTable}
-            onDelete={handleDeleteTable}
-            onMarkAsPaid={handleMarkAsPaid}
-          />
-        ))}
-      </div>
+      {/* Order History Section - Always Visible */}
+      {showHistory && (
+        <div style={{ 
+          marginBottom: 'var(--spacing-xl)',
+          background: 'var(--card-bg)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--spacing-xl)',
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--card-border)',
+          transition: 'all var(--transition-base)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: 'var(--spacing-lg)',
+            paddingBottom: 'var(--spacing-md)',
+            borderBottom: '2px solid rgba(102, 126, 234, 0.1)',
+            flexWrap: 'wrap',
+            gap: 'var(--spacing-md)'
+          }}>
+            <h2 style={{
+              background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontSize: 'clamp(1.5rem, 5vw, 2rem)',
+              fontWeight: '800',
+              letterSpacing: '-0.5px',
+              margin: 0
+            }}>
+              📋 Order History
+            </h2>
+            <button 
+              onClick={() => setShowHistory(false)} 
+              className="btn btn-secondary"
+              style={{ 
+                fontSize: '0.875rem', 
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                minHeight: '44px',
+                minWidth: '44px'
+              }}
+            >
+              ✕ Close
+            </button>
+          </div>
+          <OrderHistory onClose={() => setShowHistory(false)} inline={true} />
+        </div>
+      )}
+
+      {/* History Table View Section - Always Visible */}
+      {showHistoryPage && (
+        <div style={{ 
+          marginBottom: 'var(--spacing-xl)',
+          background: 'var(--card-bg)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--spacing-xl)',
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--card-border)',
+          transition: 'all var(--transition-base)'
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: 'var(--spacing-lg)',
+            paddingBottom: 'var(--spacing-md)',
+            borderBottom: '2px solid rgba(102, 126, 234, 0.1)',
+            flexWrap: 'wrap',
+            gap: 'var(--spacing-md)'
+          }}>
+            <h2 style={{
+              background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontSize: 'clamp(1.5rem, 5vw, 2rem)',
+              fontWeight: '800',
+              letterSpacing: '-0.5px',
+              margin: 0
+            }}>
+              📊 History Table View
+            </h2>
+            <button 
+              onClick={() => setShowHistoryPage(false)} 
+              className="btn btn-secondary"
+              style={{ 
+                fontSize: '0.875rem', 
+                padding: 'var(--spacing-sm) var(--spacing-md)',
+                minHeight: '44px',
+                minWidth: '44px'
+              }}
+            >
+              ✕ Close
+            </button>
+          </div>
+          <OrderHistoryPage onClose={() => setShowHistoryPage(false)} inline={true} />
+        </div>
+      )}
+
+      {/* Tables Grid - Only show when showTableReservation is true */}
+      {showTableReservation && (
+        <div className="tables-grid">
+          {filteredTables.map(table => (
+            <TableCard
+              key={table.id}
+              table={table}
+              onEdit={handleEditTable}
+              onDelete={handleDeleteTable}
+              onMarkAsPaid={handleMarkAsPaid}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Add Table Button */}
       <div style={{ textAlign: 'center', marginTop: '30px' }}>
-        <button onClick={handleAddTable} className="btn btn-primary">
-          ➕ Add New Order
+        <button 
+          onClick={() => setShowTableReservation(!showTableReservation)} 
+          className="btn btn-primary"
+        >
+          {showTableReservation ? '📋 Hide Table Reservation' : '➕ Add New Order'}
         </button>
       </div>
 
@@ -505,17 +647,6 @@ const Dashboard = ({ currentUser, onLogout }) => {
         />
       )}
 
-      {showHistory && (
-        <OrderHistory
-          onClose={() => setShowHistory(false)}
-        />
-      )}
-
-      {showHistoryPage && (
-        <OrderHistoryPage
-          onClose={() => setShowHistoryPage(false)}
-        />
-      )}
 
       {showBackup && (
         <BackupRestore
@@ -537,6 +668,45 @@ const Dashboard = ({ currentUser, onLogout }) => {
               </button>
             </div>
             <PoolTableTracker onUnpaidCustomersUpdate={setPoolUnpaidCustomers} />
+          </div>
+        </div>
+      )}
+
+
+      {/* Order Status System Modal */}
+      {showOrderStatus && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '1200px', width: '95%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2>📋 Order Status System</h2>
+              <button 
+                onClick={() => setShowOrderStatus(false)} 
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '8px 12px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <OrderStatusSystem onClose={() => setShowOrderStatus(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Customer QR Generator Modal */}
+      {showCustomerQR && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '1000px', width: '95%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2>📱 Customer QR Code Generator</h2>
+              <button 
+                onClick={() => setShowCustomerQR(false)} 
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '8px 12px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <CustomerQRGenerator onClose={() => setShowCustomerQR(false)} />
           </div>
         </div>
       )}

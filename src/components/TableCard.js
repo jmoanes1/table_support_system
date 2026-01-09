@@ -1,9 +1,43 @@
 import React from 'react';
 
 const TableCard = ({ table, onEdit, onDelete, onMarkAsPaid }) => {
+  // Format time in a more readable, professional format
   const formatTime = (timeString) => {
-    if (!timeString) return 'N/A';
-    return new Date(timeString).toLocaleString();
+    if (!timeString) return 'Not set';
+    const date = new Date(timeString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    
+    // Show relative time for recent orders
+    if (diffMins < 60) {
+      return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    }
+    
+    // For older orders, show formatted date and time
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Format full date and time when needed
+  const formatFullTime = (timeString) => {
+    if (!timeString) return 'Not set';
+    const date = new Date(timeString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const getStatusColor = () => {
@@ -30,14 +64,82 @@ const TableCard = ({ table, onEdit, onDelete, onMarkAsPaid }) => {
       {table.isOccupied ? (
         <>
           <div className="table-details">
-            <p><strong>Customer:</strong> {table.customerName}</p>
-            <p><strong>Beer Ordered:</strong> {table.beerOrdered}</p>
-            <p><strong>Order Time:</strong> {formatTime(table.timeOfOrder)}</p>
-            {table.handledByName && (
-              <p><strong>Handled By:</strong> <span style={{ color: '#00d4ff', fontWeight: '600' }}>{table.handledByName}</span></p>
+            {/* Customer Information */}
+            <div className="detail-item">
+              <div className="detail-icon">👤</div>
+              <div className="detail-content">
+                <span className="detail-label">Customer Name</span>
+                <span className="detail-value">{table.customerName || 'Not specified'}</span>
+              </div>
+            </div>
+
+            {/* Beer Order Information */}
+            <div className="detail-item">
+              <div className="detail-icon">🍺</div>
+              <div className="detail-content">
+                <span className="detail-label">Beer Ordered</span>
+                <span className="detail-value">{table.beerOrdered || 'Not specified'}</span>
+                {table.quantity > 1 && (
+                  <span className="detail-badge">×{table.quantity}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Custom Order if exists */}
+            {table.customOrder && (
+              <div className="detail-item">
+                <div className="detail-icon">📝</div>
+                <div className="detail-content">
+                  <span className="detail-label">Special Request</span>
+                  <span className="detail-value detail-special">{table.customOrder}</span>
+                </div>
+              </div>
             )}
+
+            {/* Order Time */}
+            <div className="detail-item">
+              <div className="detail-icon">🕐</div>
+              <div className="detail-content">
+                <span className="detail-label">Order Time</span>
+                <span className="detail-value" title={formatFullTime(table.timeOfOrder)}>
+                  {formatTime(table.timeOfOrder)}
+                </span>
+              </div>
+            </div>
+
+            {/* Staff Information */}
+            {table.handledByName && (
+              <div className="detail-item">
+                <div className="detail-icon">👨‍💼</div>
+                <div className="detail-content">
+                  <span className="detail-label">Handled By</span>
+                  <span className="detail-value detail-staff">{table.handledByName}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Total Cost */}
+            {table.totalCost > 0 && (
+              <div className="detail-item detail-item-total">
+                <div className="detail-icon">💰</div>
+                <div className="detail-content">
+                  <span className="detail-label">Total Cost</span>
+                  <span className="detail-value detail-total">₱{table.totalCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Finished Time */}
             {table.timeFinished && (
-              <p><strong>Finished:</strong> {formatTime(table.timeFinished)}</p>
+              <div className="detail-item">
+                <div className="detail-icon">✅</div>
+                <div className="detail-content">
+                  <span className="detail-label">Completed</span>
+                  <span className="detail-value" title={formatFullTime(table.timeFinished)}>
+                    {formatTime(table.timeFinished)}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
 
@@ -70,10 +172,12 @@ const TableCard = ({ table, onEdit, onDelete, onMarkAsPaid }) => {
           </div>
         </>
       ) : (
-        <div className="table-details">
-          <p style={{ color: '#7f8c8d', fontStyle: 'italic' }}>
-            This table is available for new customers
-          </p>
+        <div className="table-details table-details-empty">
+          <div className="empty-state">
+            <div className="empty-icon">🪑</div>
+            <p className="empty-text">This table is available</p>
+            <p className="empty-subtext">Ready for new customers</p>
+          </div>
         </div>
       )}
 

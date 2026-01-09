@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const OrderHistory = ({ onClose }) => {
+const OrderHistory = ({ onClose, inline = false }) => {
   const [orderHistory, setOrderHistory] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all');
@@ -90,15 +90,8 @@ const OrderHistory = ({ onClose }) => {
     }
   };
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal order-history-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>📋 Order History</h2>
-          <button onClick={onClose} className="btn btn-secondary">✕</button>
-        </div>
-
-        <div className="history-content">
+  const content = (
+    <div className="history-content">
           {/* Filters */}
           <div className="history-filters">
             <div className="filter-group">
@@ -227,6 +220,20 @@ const OrderHistory = ({ onClose }) => {
             </div>
           )}
         </div>
+  );
+
+  if (inline) {
+    return content;
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal order-history-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>📋 Order History</h2>
+          <button onClick={onClose} className="btn btn-secondary">✕</button>
+        </div>
+        {content}
       </div>
     </div>
   );
